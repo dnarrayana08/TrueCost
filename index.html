@@ -38,7 +38,23 @@
 
   /* ===== PAGES ===== */
   .page { display: none; min-height: 100vh; }
-  .page.active { display: block; }
+  .page.active {
+    display: block;
+    animation: pageIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .page.exit {
+    display: block;
+    animation: pageOut 0.2s ease-in forwards;
+    pointer-events: none;
+  }
+  @keyframes pageIn {
+    0%  { opacity: 0; transform: translateY(22px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pageOut {
+    0%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-12px); }
+  }
 
   /* ===== NAV ===== */
   .nav {
@@ -1505,6 +1521,9 @@
       <div class="page-num">Step 06 of 06</div>
       <h1 class="page-title">AI Financial Advisor</h1>
       <p class="page-desc">Ask anything about your car purchase. The AI has full context of your finances and the vehicle you selected.</p>
+      <div style="margin-top:1.25rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+        <div style="position:relative;display:flex;align-items:center;flex:1;max-width:440px">
+          
     </div>
 
     <div class="ai-chat-wrap">
@@ -1588,14 +1607,21 @@ const state = {
 // NAVIGATION
 // ============================================================
 function goPage(n) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + n).classList.add('active');
+  const currentActive = document.querySelector('.page.active');
+  const next = document.getElementById('page-' + n);
+  if (currentActive && currentActive !== next) {
+    currentActive.classList.add('exit');
+    currentActive.classList.remove('active');
+    setTimeout(() => { currentActive.classList.remove('exit'); }, 220);
+  }
+  document.documentElement.style.scrollBehavior = 'auto';
+  window.scrollTo({ top: 0 });
+  next.classList.add('active');
   document.querySelectorAll('.nav-step').forEach((s, i) => {
     s.classList.remove('active', 'done');
     if (i + 1 === n) s.classList.add('active');
     else if (i + 1 < n) s.classList.add('done');
   });
-  window.scrollTo(0, 0);
   if (n === 4) calcTrueCost();
   if (n === 5) calcScenarios();
   if (n === 6) buildInsights();
@@ -1916,19 +1942,19 @@ async function sendAI() {
   container.scrollTop = container.scrollHeight;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+   
+    const response = await fetch('/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'llama-3.3-70b-versatile',
         max_tokens: 1000,
-        system: buildSystemPrompt(),
-        messages: [{ role: 'user', content: msg }]
+        messages: [{ role: 'system', content: buildSystemPrompt() }, { role: 'user', content: msg }]
       })
     });
 
     const data = await response.json();
-    const text = data.content?.map(b => b.text || '').join('') || 'I was unable to generate a response. Please try again.';
+    const text = data.choices?.[0]?.message?.content || data.error?.message || 'I was unable to generate a response. Please try again.';
 
     document.getElementById(typingId)?.remove();
     appendMsg('ai', text);
