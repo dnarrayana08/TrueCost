@@ -1,0 +1,1966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrueCost — Car Affordability Reality Check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --border: #2a2a2a;
+    --gold: #c9a84c;
+    --gold-dim: #8a6f2e;
+    --red: #e05252;
+    --green: #4caf7d;
+    --amber: #e0943a;
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --text-faint: #444;
+    --mono: 'IBM Plex Mono', monospace;
+    --serif: 'Playfair Display', serif;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ===== PAGES ===== */
+  .page { display: none; min-height: 100vh; }
+  .page.active { display: block; }
+
+  /* ===== NAV ===== */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(10,10,10,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    font-family: var(--serif);
+    font-size: 1.3rem;
+    color: var(--gold);
+    letter-spacing: -0.02em;
+  }
+  .nav-steps {
+    display: flex; gap: 0; align-items: center;
+  }
+  .nav-step {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    padding: 0.25rem 0.6rem;
+    border-right: 1px solid var(--border);
+    cursor: pointer;
+    transition: color 0.2s;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .nav-step:last-child { border-right: none; }
+  .nav-step.active { color: var(--gold); }
+  .nav-step.done { color: var(--text-dim); cursor: pointer; }
+  .nav-step.done:hover { color: var(--text); }
+
+  /* ===== COMMON ===== */
+  .container { max-width: 1000px; margin: 0 auto; padding: 0 2rem; }
+  .container-wide { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+  .pt-nav { padding-top: 56px; }
+
+  .label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .section-rule {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, var(--gold-dim), transparent);
+    margin: 2rem 0;
+  }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--gold);
+    color: #000;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.9rem 2rem;
+    border: none; cursor: pointer;
+    transition: all 0.2s;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  }
+  .btn-primary:hover { background: #e0bb6a; transform: translateY(-1px); }
+
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: transparent;
+    color: var(--gold);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.9rem 2rem;
+    border: 1px solid var(--gold-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--gold); background: rgba(201,168,76,0.05); }
+
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.7rem 1.2rem;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: #444; }
+
+  /* Input styles */
+  .form-group { margin-bottom: 1.25rem; }
+  .form-label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 0.4rem;
+  }
+  .form-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    padding: 0.7rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--gold-dim); }
+  .form-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    padding: 0.7rem 1rem;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .form-select:focus { border-color: var(--gold-dim); }
+  .form-hint {
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    margin-top: 0.3rem;
+    font-family: var(--mono);
+  }
+
+  .currency-input-wrap { position: relative; }
+  .currency-symbol {
+    position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%);
+    font-family: var(--mono);
+    color: var(--text-faint);
+    font-size: 0.85rem;
+    pointer-events: none;
+  }
+  .currency-input-wrap .form-input { padding-left: 2rem; }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+  }
+  .card-dark {
+    background: #0d0d0d;
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+  }
+
+  /* Risk badges */
+  .badge {
+    display: inline-flex;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.6rem;
+    font-weight: 500;
+  }
+  .badge-safe { background: rgba(76,175,125,0.15); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
+  .badge-risky { background: rgba(224,148,58,0.15); color: var(--amber); border: 1px solid rgba(224,148,58,0.3); }
+  .badge-danger { background: rgba(224,82,82,0.15); color: var(--red); border: 1px solid rgba(224,82,82,0.3); }
+
+  /* Number display */
+  .big-number {
+    font-family: var(--mono);
+    font-size: 2.5rem;
+    font-weight: 500;
+    color: var(--gold);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .big-number-sm {
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  /* ======================================
+     PAGE 1: LANDING
+  ====================================== */
+  #page-landing {
+    background: var(--bg);
+  }
+
+  .landing-hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center;
+    padding-top: 56px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .landing-hero::before {
+    content: '';
+    position: absolute;
+    top: -20%; left: -10%;
+    width: 70%; height: 80%;
+    background: radial-gradient(ellipse, rgba(201,168,76,0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    display: block; width: 32px; height: 1px;
+    background: var(--gold);
+  }
+
+  .hero-headline {
+    font-family: var(--serif);
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    max-width: 800px;
+  }
+  .hero-headline em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .hero-sub {
+    font-size: 1.05rem;
+    color: var(--text-dim);
+    max-width: 520px;
+    line-height: 1.7;
+    margin-bottom: 2.5rem;
+  }
+
+  .hero-cta-row {
+    display: flex; align-items: center; gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .hero-note {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    letter-spacing: 0.05em;
+  }
+
+  /* Scrolling ticker */
+  .ticker-wrap {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 0.6rem 0;
+    overflow: hidden;
+    background: var(--surface);
+    margin-top: 4rem;
+  }
+  .ticker-inner {
+    display: flex;
+    gap: 3rem;
+    white-space: nowrap;
+    animation: ticker 30s linear infinite;
+  }
+  .ticker-item {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .ticker-item .dot {
+    width: 4px; height: 4px;
+    background: var(--gold);
+    border-radius: 50%;
+  }
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* Hidden cost section */
+  .hidden-costs {
+    padding: 6rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .cost-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 3rem;
+    border: 1px solid var(--border);
+  }
+  .cost-item {
+    padding: 2rem 1.5rem;
+    border-right: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+  }
+  .cost-item:last-child { border-right: none; }
+  .cost-item:hover { background: var(--surface2); }
+  .cost-icon {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  .cost-name {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+  .cost-desc {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .cost-amount {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--gold);
+    margin-top: 1rem;
+  }
+
+  /* Example section */
+  .example-section {
+    padding: 6rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .example-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+  }
+  .example-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+  }
+  .example-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .example-table tr:hover td { background: var(--surface2); }
+  .text-red { color: var(--red); }
+  .text-gold { color: var(--gold); }
+  .text-green { color: var(--green); }
+  .text-amber { color: var(--amber); }
+  .text-dim { color: var(--text-dim); }
+
+  /* Steps section */
+  .steps-section {
+    padding: 6rem 0;
+  }
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    margin-top: 3rem;
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+  }
+  .step-item {
+    padding: 2.5rem 2rem;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .step-num {
+    font-family: var(--serif);
+    font-size: 4rem;
+    font-weight: 700;
+    color: var(--text-faint);
+    line-height: 1;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  .step-title {
+    font-family: var(--serif);
+    font-size: 1.2rem;
+    margin-bottom: 0.75rem;
+  }
+  .step-desc { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; }
+
+  /* ======================================
+     PAGE 2: FINANCIAL CHECK
+  ====================================== */
+  .page-header {
+    padding: 4rem 0 3rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-num {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 0.5rem;
+  }
+  .page-title {
+    font-family: var(--serif);
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 0.75rem;
+  }
+  .page-desc { font-size: 0.9rem; color: var(--text-dim); max-width: 500px; line-height: 1.6; }
+
+  .form-section {
+    padding: 3rem 0;
+  }
+  .form-section-title {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Results preview panel */
+  .results-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    padding: 1.5rem;
+    position: sticky;
+    top: 70px;
+  }
+  .results-panel-title {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 1.25rem;
+  }
+  .result-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-label { font-family: var(--mono); font-size: 0.7rem; color: var(--text-dim); }
+  .result-value { font-family: var(--mono); font-size: 0.9rem; color: var(--text); }
+
+  /* Gauge */
+  .gauge-wrap {
+    margin: 1.5rem 0;
+    position: relative;
+  }
+  .gauge-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.4rem;
+  }
+  .gauge-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+    background: linear-gradient(90deg, var(--green), var(--amber), var(--red));
+  }
+  .gauge-labels {
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: 0.6rem; color: var(--text-faint);
+  }
+
+  /* ======================================
+     PAGE 3: CAR SELECTION
+  ====================================== */
+  .filter-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 0;
+    position: sticky;
+    top: 56px;
+    z-index: 50;
+  }
+  .filter-row {
+    display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;
+  }
+  .filter-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    padding: 0.5rem 0.9rem;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    transition: border-color 0.2s;
+  }
+  .filter-select:focus { border-color: var(--gold-dim); }
+
+  .cars-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin-top: 2rem;
+  }
+  .car-card {
+    background: var(--surface);
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+  }
+  .car-card:hover { background: var(--surface2); }
+  .car-card.selected { background: var(--surface2); border: 2px solid var(--gold); }
+
+  .car-img-wrap {
+    background: var(--surface2);
+    height: 140px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+    font-size: 4rem;
+  }
+  .car-info { padding: 1.25rem; }
+  .car-name {
+    font-family: var(--serif);
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+  }
+  .car-meta {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+  }
+  .car-price {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+  }
+  .car-specs {
+    display: flex; gap: 1rem;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    flex-wrap: wrap;
+  }
+  .car-actions {
+    padding: 0 1.25rem 1.25rem;
+    display: flex; gap: 0.5rem; flex-wrap: wrap;
+  }
+  .car-btn {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .car-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+  .car-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.08); }
+
+  /* ======================================
+     PAGE 4: TRUE COST
+  ====================================== */
+  .cost-breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    margin-top: 2rem;
+  }
+  .cost-breakdown-item {
+    background: var(--surface);
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .cbi-label { font-size: 0.85rem; color: var(--text-dim); }
+  .cbi-value { font-family: var(--mono); font-size: 1rem; color: var(--text); }
+  .cbi-value.highlight { color: var(--gold); font-size: 1.2rem; }
+
+  .total-bar {
+    background: var(--surface);
+    border: 1px solid var(--gold-dim);
+    padding: 2rem;
+    margin-top: 1px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .income-gauge {
+    background: var(--surface);
+    padding: 2rem;
+    border: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+  .income-percent {
+    font-family: var(--serif);
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  /* ======================================
+     PAGE 5: SCENARIOS
+  ====================================== */
+  .scenarios-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin-top: 2rem;
+  }
+  .scenario-card {
+    background: var(--surface);
+    padding: 2rem;
+  }
+  .scenario-card.featured {
+    background: #0e0e0e;
+    border-top: 2px solid var(--green);
+  }
+  .scenario-letter {
+    font-family: var(--serif);
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--text-faint);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+  .scenario-title {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+  .scenario-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+  .scenario-line {
+    display: flex; justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+  }
+  .scenario-line:last-child { border-bottom: none; }
+  .scenario-line-label { color: var(--text-dim); }
+  .scenario-total {
+    background: var(--surface2);
+    padding: 1rem;
+    margin-top: 1rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+  .scenario-total-label { color: var(--text-dim); margin-bottom: 0.25rem; }
+  .scenario-total-value {
+    font-size: 1.4rem;
+    font-weight: 500;
+  }
+
+  /* chart bar */
+  .bar-chart {
+    margin-top: 2rem;
+    padding: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .bar-row {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .bar-label { font-family: var(--mono); font-size: 0.7rem; color: var(--text-dim); width: 120px; flex-shrink: 0; }
+  .bar-track { flex: 1; background: var(--surface2); height: 28px; position: relative; }
+  .bar-fill {
+    height: 100%;
+    display: flex; align-items: center;
+    padding-left: 0.5rem;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: #000;
+    font-weight: 500;
+    transition: width 0.8s ease;
+  }
+
+  /* ======================================
+     PAGE 6: AI INSIGHTS
+  ====================================== */
+  .ai-chat-wrap {
+    padding: 2rem 0 4rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+  .ai-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    height: 600px;
+  }
+  .ai-panel-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .ai-pulse {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+  .ai-panel-title {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .ai-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex; flex-direction: column; gap: 1rem;
+  }
+  .ai-messages::-webkit-scrollbar { width: 4px; }
+  .ai-messages::-webkit-scrollbar-track { background: transparent; }
+  .ai-messages::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .msg {
+    max-width: 90%;
+  }
+  .msg-ai {
+    align-self: flex-start;
+  }
+  .msg-user {
+    align-self: flex-end;
+  }
+  .msg-bubble {
+    padding: 0.85rem 1rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    border-radius: 0;
+  }
+  .msg-ai .msg-bubble {
+    background: var(--surface2);
+    border-left: 2px solid var(--gold);
+    color: var(--text);
+  }
+  .msg-user .msg-bubble {
+    background: rgba(201,168,76,0.08);
+    border: 1px solid var(--gold-dim);
+    color: var(--text);
+    text-align: right;
+  }
+  .msg-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 0.3rem;
+  }
+  .msg-user .msg-label { text-align: right; }
+
+  .ai-input-row {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 0.5rem;
+  }
+  .ai-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    padding: 0.6rem 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .ai-input:focus { border-color: var(--gold-dim); }
+  .ai-send-btn {
+    background: var(--gold);
+    border: none;
+    color: #000;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .ai-send-btn:hover { background: #e0bb6a; }
+  .ai-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .insights-sidebar {
+    display: flex; flex-direction: column; gap: 1rem;
+  }
+  .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.25rem;
+    border-left: 3px solid transparent;
+  }
+  .insight-card.warning { border-left-color: var(--red); }
+  .insight-card.caution { border-left-color: var(--amber); }
+  .insight-card.positive { border-left-color: var(--green); }
+  .insight-card.info { border-left-color: var(--gold); }
+  .insight-tag {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .insight-card.warning .insight-tag { color: var(--red); }
+  .insight-card.caution .insight-tag { color: var(--amber); }
+  .insight-card.positive .insight-tag { color: var(--green); }
+  .insight-card.info .insight-tag { color: var(--gold); }
+  .insight-text { font-size: 0.82rem; color: var(--text-dim); line-height: 1.5; }
+
+  /* Loading dots */
+  .typing-dots {
+    display: flex; gap: 3px; align-items: center; padding: 0.5rem 0;
+  }
+  .typing-dot {
+    width: 5px; height: 5px; background: var(--text-dim);
+    border-radius: 50%;
+    animation: typing 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing {
+    0%,60%,100% { opacity: 0.3; transform: scale(1); }
+    30% { opacity: 1; transform: scale(1.2); }
+  }
+
+  /* ===== BOTTOM NAV ===== */
+  .bottom-nav {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 0 3rem;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 3rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .cost-grid { grid-template-columns: 1fr 1fr; }
+    .cost-item { border-bottom: 1px solid var(--border); }
+    .steps-grid { grid-template-columns: 1fr; }
+    .cars-grid { grid-template-columns: 1fr 1fr; }
+    .scenarios-grid { grid-template-columns: 1fr; }
+    .ai-chat-wrap { grid-template-columns: 1fr; }
+    .cost-breakdown-grid { grid-template-columns: 1fr; }
+    .nav-steps { display: none; }
+    .hero-headline { font-size: 2.2rem; }
+  }
+  @media (max-width: 520px) {
+    .cars-grid { grid-template-columns: 1fr; }
+    .cost-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">TrueCost</div>
+  <div class="nav-steps">
+    <div class="nav-step active" id="nav-1" onclick="goPage(1)">01 Overview</div>
+    <div class="nav-step" id="nav-2" onclick="goPage(2)">02 Your Finances</div>
+    <div class="nav-step" id="nav-3" onclick="goPage(3)">03 Car Selection</div>
+    <div class="nav-step" id="nav-4" onclick="goPage(4)">04 True Cost</div>
+    <div class="nav-step" id="nav-5" onclick="goPage(5)">05 Scenarios</div>
+    <div class="nav-step" id="nav-6" onclick="goPage(6)">06 AI Insight</div>
+  </div>
+</nav>
+
+<!-- ============================================================
+     PAGE 1: LANDING
+============================================================ -->
+<div id="page-1" class="page active">
+  <div class="landing-hero">
+    <div class="container">
+      <div class="hero-eyebrow">Financial Reality Check — Automotive Edition</div>
+      <h1 class="hero-headline">
+        That RM1,200/month<br>
+        car actually costs<br>
+        <em>RM2,800/month.</em>
+      </h1>
+      <p class="hero-sub">
+        Dealerships show you the installment. They hide the fuel, insurance, maintenance, and depreciation. Before you sign anything, see the full picture.
+      </p>
+      <div class="hero-cta-row">
+        <button class="btn-primary" onclick="goPage(2)">
+          Start My Reality Check →
+        </button>
+        <span class="hero-note">Free · Takes 3 minutes · No signup</span>
+      </div>
+    </div>
+    <div class="ticker-wrap">
+      <div class="ticker-inner">
+        <span class="ticker-item"><span class="dot"></span> Average Malaysian spends 38% of income on car</span>
+        <span class="ticker-item"><span class="dot"></span> Hidden costs average 60% on top of loan payment</span>
+        <span class="ticker-item"><span class="dot"></span> New car loses 20% value in year one</span>
+        <span class="ticker-item"><span class="dot"></span> Only 1 in 5 buyers calculates total ownership cost</span>
+        <span class="ticker-item"><span class="dot"></span> Insurance + road tax alone: RM2,000–8,000/year</span>
+        <span class="ticker-item"><span class="dot"></span> Average Malaysian spends 38% of income on car</span>
+        <span class="ticker-item"><span class="dot"></span> Hidden costs average 60% on top of loan payment</span>
+        <span class="ticker-item"><span class="dot"></span> New car loses 20% value in year one</span>
+        <span class="ticker-item"><span class="dot"></span> Only 1 in 5 buyers calculates total ownership cost</span>
+        <span class="ticker-item"><span class="dot"></span> Insurance + road tax alone: RM2,000–8,000/year</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden costs -->
+  <section class="hidden-costs">
+    <div class="container">
+      <div class="label">What dealers don't show you</div>
+      <div style="margin-top:1rem">
+        <h2 style="font-family:var(--serif);font-size:2rem;font-weight:700;line-height:1.2;max-width:500px">
+          Four costs that will quietly drain your account every month
+        </h2>
+      </div>
+      <div class="cost-grid">
+        <div class="cost-item">
+          <span class="cost-icon">⛽</span>
+          <div class="cost-name">Fuel</div>
+          <div class="cost-desc">Based on your commute and engine size. Often RM400–900/month for average drivers.</div>
+          <div class="cost-amount">RM 400 – 900/mo</div>
+        </div>
+        <div class="cost-item">
+          <span class="cost-icon">🛡️</span>
+          <div class="cost-name">Insurance</div>
+          <div class="cost-desc">Comprehensive cover for a new car ranges RM1,800–6,000/year depending on value.</div>
+          <div class="cost-amount">RM 150 – 500/mo</div>
+        </div>
+        <div class="cost-item">
+          <span class="cost-icon">🔧</span>
+          <div class="cost-name">Maintenance</div>
+          <div class="cost-desc">Service, tyres, brakes, unexpected repairs. Budgeting RM100–300/month is conservative.</div>
+          <div class="cost-amount">RM 100 – 300/mo</div>
+        </div>
+        <div class="cost-item">
+          <span class="cost-icon">📉</span>
+          <div class="cost-name">Depreciation</div>
+          <div class="cost-desc">A RM100k car loses ~RM12k/year in value. This is real money you never get back.</div>
+          <div class="cost-amount">RM 600 – 1,500/mo</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Example -->
+  <section class="example-section">
+    <div class="container">
+      <div class="label">Real example — Perodua Ativa 2024</div>
+      <h2 style="font-family:var(--serif);font-size:1.8rem;font-weight:700;margin-top:0.75rem;margin-bottom:0.25rem">
+        A RM75,000 car, broken down honestly
+      </h2>
+      <p style="color:var(--text-dim);font-size:0.85rem">Over 60 months / 5 years at 3.5% interest</p>
+      <table class="example-table">
+        <thead>
+          <tr>
+            <th>Cost Component</th>
+            <th>Monthly</th>
+            <th>Annual</th>
+            <th>5-Year Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Loan Installment</td>
+            <td class="text-gold">RM 1,186</td>
+            <td>RM 14,232</td>
+            <td>RM 71,160</td>
+          </tr>
+          <tr>
+            <td>Fuel (avg 1,200km/mo)</td>
+            <td class="text-amber">RM 530</td>
+            <td>RM 6,360</td>
+            <td>RM 31,800</td>
+          </tr>
+          <tr>
+            <td>Insurance + Road Tax</td>
+            <td class="text-amber">RM 220</td>
+            <td>RM 2,640</td>
+            <td>RM 13,200</td>
+          </tr>
+          <tr>
+            <td>Maintenance</td>
+            <td class="text-amber">RM 150</td>
+            <td>RM 1,800</td>
+            <td>RM 9,000</td>
+          </tr>
+          <tr>
+            <td>Depreciation</td>
+            <td class="text-red">RM 750</td>
+            <td>RM 9,000</td>
+            <td>RM 45,000</td>
+          </tr>
+          <tr style="background:var(--surface2)">
+            <td><strong>TRUE TOTAL COST</strong></td>
+            <td class="text-red"><strong>RM 2,836</strong></td>
+            <td class="text-red"><strong>RM 34,032</strong></td>
+            <td class="text-red"><strong>RM 170,160</strong></td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-family:var(--mono);font-size:0.7rem;color:var(--text-faint);margin-top:0.75rem">
+        ↑ The dealer quoted RM1,186/month. Reality: RM2,836/month. That's a 139% difference.
+      </p>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="steps-section">
+    <div class="container">
+      <div class="label">How TrueCost works</div>
+      <h2 style="font-family:var(--serif);font-size:1.8rem;font-weight:700;margin-top:0.75rem;margin-bottom:0.25rem">
+        Three steps to financial clarity
+      </h2>
+      <div class="steps-grid">
+        <div class="step-item">
+          <span class="step-num">01</span>
+          <div class="step-title">Enter Your Finances</div>
+          <div class="step-desc">Your salary, commitments, savings, and expenses. We calculate how much car you can actually afford — not just what the bank will approve.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-num">02</span>
+          <div class="step-title">Pick Your Car</div>
+          <div class="step-desc">Browse and select the vehicle you're considering. New or used. We pull real Malaysian market pricing and calculate all hidden costs automatically.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-num">03</span>
+          <div class="step-title">See the Truth</div>
+          <div class="step-desc">Get a complete cost breakdown, 5-year scenario analysis, and AI-powered financial advice — in plain language, not jargon.</div>
+        </div>
+      </div>
+      <div style="margin-top:3rem;text-align:center;">
+        <button class="btn-primary" onclick="goPage(2)" style="font-size:0.8rem;padding:1rem 2.5rem">
+          Begin My Financial Reality Check →
+        </button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============================================================
+     PAGE 2: FINANCIAL CHECK
+============================================================ -->
+<div id="page-2" class="page pt-nav">
+  <div class="container">
+    <div class="page-header">
+      <div class="page-num">Step 02 of 06</div>
+      <h1 class="page-title">Financial Reality Check</h1>
+      <p class="page-desc">Before recommending anything, we need to understand your actual financial position. This takes 2 minutes.</p>
+    </div>
+
+    <div class="grid-2" style="margin-top:2rem;gap:2rem;align-items:start">
+      <!-- Form -->
+      <div>
+        <div class="form-section">
+          <div class="form-section-title">01 — Core Financials</div>
+          <div class="form-group">
+            <label class="form-label">Monthly Take-Home Salary</label>
+            <div class="currency-input-wrap">
+              <span class="currency-symbol">RM</span>
+              <input type="number" class="form-input" id="fi-salary" placeholder="5,000" oninput="recalcFinance()">
+            </div>
+            <div class="form-hint">After EPF and tax deductions</div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Existing Loan Commitments/mo</label>
+              <div class="currency-input-wrap">
+                <span class="currency-symbol">RM</span>
+                <input type="number" class="form-input" id="fi-loans" placeholder="0" oninput="recalcFinance()">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Monthly Living Expenses</label>
+              <div class="currency-input-wrap">
+                <span class="currency-symbol">RM</span>
+                <input type="number" class="form-input" id="fi-expenses" placeholder="2,000" oninput="recalcFinance()">
+              </div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Total Savings</label>
+              <div class="currency-input-wrap">
+                <span class="currency-symbol">RM</span>
+                <input type="number" class="form-input" id="fi-savings" placeholder="10,000" oninput="recalcFinance()">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Emergency Fund</label>
+              <div class="currency-input-wrap">
+                <span class="currency-symbol">RM</span>
+                <input type="number" class="form-input" id="fi-emergency" placeholder="0" oninput="recalcFinance()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">02 — Personal Profile (Optional)</div>
+          <div class="grid-3">
+            <div class="form-group">
+              <label class="form-label">Age</label>
+              <input type="number" class="form-input" id="fi-age" placeholder="28" oninput="recalcFinance()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Dependents</label>
+              <input type="number" class="form-input" id="fi-dependents" placeholder="0" oninput="recalcFinance()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Job Stability</label>
+              <select class="form-select" id="fi-stability" onchange="recalcFinance()">
+                <option value="high">Permanent</option>
+                <option value="medium" selected>Contract</option>
+                <option value="low">Freelance</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="goPage(3)" style="width:100%">
+          Calculate & Choose a Car →
+        </button>
+      </div>
+
+      <!-- Results panel -->
+      <div>
+        <div class="results-panel">
+          <div class="results-panel-title">Live Financial Analysis</div>
+
+          <div class="result-row">
+            <span class="result-label">Safe Car Budget (monthly)</span>
+            <span class="result-value text-gold" id="res-budget">RM —</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">Max Recommended Car Price</span>
+            <span class="result-value" id="res-maxprice">RM —</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">Disposable Income</span>
+            <span class="result-value" id="res-disposable">RM —</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">Debt-to-Income Ratio</span>
+            <span class="result-value" id="res-dti">— %</span>
+          </div>
+
+          <div class="gauge-wrap" style="margin-top:1.5rem">
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem">
+              <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim)">Financial Risk</span>
+              <span class="badge badge-safe" id="res-badge">Enter data</span>
+            </div>
+            <div class="gauge-bar">
+              <div class="gauge-fill" id="res-gauge" style="width:0%"></div>
+            </div>
+            <div class="gauge-labels"><span>Safe</span><span>Risky</span><span>Dangerous</span></div>
+          </div>
+
+          <div id="res-advice" style="margin-top:1.5rem;padding:1rem;background:var(--surface2);border-left:2px solid var(--text-faint)">
+            <p style="font-size:0.78rem;color:var(--text-dim);line-height:1.5">Enter your salary and expenses above to see your personalised analysis.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAGE 3: CAR SELECTION
+============================================================ -->
+<div id="page-3" class="page pt-nav">
+  <div class="container-wide">
+    <div class="page-header">
+      <div class="page-num">Step 03 of 06</div>
+      <h1 class="page-title">Select Your Car</h1>
+      <p class="page-desc">Browse Malaysian market options and select the vehicle you're considering. We'll calculate its true cost against your budget.</p>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="container-wide">
+      <div class="filter-row">
+        <select class="filter-select" id="filter-brand" onchange="filterCars()">
+          <option value="">All Brands</option>
+          <option value="Perodua">Perodua</option>
+          <option value="Proton">Proton</option>
+          <option value="Toyota">Toyota</option>
+          <option value="Honda">Honda</option>
+        </select>
+        <select class="filter-select" id="filter-type" onchange="filterCars()">
+          <option value="">New &amp; Used</option>
+          <option value="new">New Only</option>
+          <option value="used">Used Only</option>
+        </select>
+        <select class="filter-select" id="filter-price" onchange="filterCars()">
+          <option value="">Any Price</option>
+          <option value="50000">Under RM 50k</option>
+          <option value="80000">Under RM 80k</option>
+          <option value="120000">Under RM 120k</option>
+        </select>
+        <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);margin-left:auto">
+          <span id="car-count">8</span> vehicles shown
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-wide">
+    <div class="cars-grid" id="cars-grid"></div>
+
+    <div class="bottom-nav">
+      <button class="btn-ghost" onclick="goPage(2)">← Back</button>
+      <button class="btn-primary" id="btn-next-4" onclick="goPage(4)" disabled style="opacity:0.4">
+        View True Cost →
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAGE 4: TRUE COST
+============================================================ -->
+<div id="page-4" class="page pt-nav">
+  <div class="container">
+    <div class="page-header">
+      <div class="page-num">Step 04 of 06</div>
+      <h1 class="page-title" id="p4-title">True Cost Breakdown</h1>
+      <p class="page-desc">Every ringgit you'll spend owning this car — not just the installment the dealer quoted you.</p>
+    </div>
+
+    <div style="margin-top:2rem">
+      <div class="label">Monthly Cost Breakdown</div>
+      <div class="cost-breakdown-grid">
+        <div class="cost-breakdown-item">
+          <span class="cbi-label">🏦 Loan Installment</span>
+          <span class="cbi-value" id="cb-loan">RM —</span>
+        </div>
+        <div class="cost-breakdown-item">
+          <span class="cbi-label">⛽ Fuel (1,200km/mo)</span>
+          <span class="cbi-value" id="cb-fuel">RM —</span>
+        </div>
+        <div class="cost-breakdown-item">
+          <span class="cbi-label">🛡️ Insurance + Road Tax</span>
+          <span class="cbi-value" id="cb-insurance">RM —</span>
+        </div>
+        <div class="cost-breakdown-item">
+          <span class="cbi-label">🔧 Maintenance Estimate</span>
+          <span class="cbi-value" id="cb-maint">RM —</span>
+        </div>
+        <div class="cost-breakdown-item">
+          <span class="cbi-label">📉 Monthly Depreciation</span>
+          <span class="cbi-value" id="cb-deprec">RM —</span>
+        </div>
+        <div class="cost-breakdown-item" style="background:var(--surface2)">
+          <span class="cbi-label">📊 Total 5-Year Cost</span>
+          <span class="cbi-value highlight" id="cb-5yr">RM —</span>
+        </div>
+      </div>
+
+      <div class="total-bar">
+        <div>
+          <div class="label">True Monthly Ownership Cost</div>
+          <div class="big-number" id="cb-total" style="margin-top:0.5rem">RM —</div>
+        </div>
+        <div style="text-align:right">
+          <div class="label">Financial Safety Rating</div>
+          <div style="margin-top:0.5rem">
+            <span class="badge" id="cb-safety" style="font-size:0.75rem;padding:0.4rem 1rem">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="income-gauge">
+        <div class="label">Income Allocation</div>
+        <div class="grid-2" style="margin-top:1.25rem;gap:2rem">
+          <div>
+            <div class="income-percent text-gold" id="ig-pct">—%</div>
+            <div style="font-size:0.85rem;color:var(--text-dim);margin-top:0.25rem">of monthly income goes to this car</div>
+            <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text-faint);margin-top:0.5rem">Recommended maximum: 15–20%</div>
+          </div>
+          <div>
+            <div class="gauge-bar" style="height:10px;margin-top:1rem">
+              <div class="gauge-fill" id="ig-bar" style="width:0%"></div>
+            </div>
+            <div class="gauge-labels" style="margin-top:0.5rem"><span>0%</span><span>20%</span><span>40%+</span></div>
+            <div id="ig-advice" style="margin-top:1rem;font-size:0.8rem;color:var(--text-dim);line-height:1.5"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="btn-ghost" onclick="goPage(3)">← Back</button>
+      <button class="btn-primary" onclick="goPage(5)">View Scenarios →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAGE 5: SCENARIOS
+============================================================ -->
+<div id="page-5" class="page pt-nav">
+  <div class="container">
+    <div class="page-header">
+      <div class="page-num">Step 05 of 06</div>
+      <h1 class="page-title">5-Year Scenario Comparison</h1>
+      <p class="page-desc">Three paths forward. Same starting point, very different financial outcomes after 60 months.</p>
+    </div>
+
+    <div class="scenarios-grid" style="margin-top:2rem">
+      <!-- Scenario A -->
+      <div class="scenario-card">
+        <div class="scenario-letter">A</div>
+        <div class="scenario-title">Buy New</div>
+        <div class="scenario-subtitle">Full price, brand new, full warranty and peace of mind.</div>
+        <div class="scenario-line"><span class="scenario-line-label">Purchase Price</span><span id="sc-a-price" class="text-gold">—</span></div>
+        <div class="scenario-line"><span class="scenario-line-label">Total Interest Paid</span><span id="sc-a-interest" class="text-amber">—</span></div>
+        <div class="scenario-line"><span class="scenario-line-label">Running Costs (5yr)</span><span id="sc-a-running">—</span></div>
+        <div class="scenario-line"><span class="scenario-line-label">Est. Resale Value</span><span id="sc-a-resale" class="text-green">—</span></div>
+        <div class="scenario-total">
+          <div class="scenario-total-label">Net 5-Year Ownership Cost</div>
+          <div class="scenario-total-value text-red" id="sc-a-total">—</div>
+        </div>
+      </div>
+
+      <!-- Scenario B -->
+      <div class="scenario-card featured">
+        <div style="font-family:var(--mono);font-size:0.6rem;color:var(--green);letter-spacing:0.1em;margin-bottom:0.5rem">✓ RECOMMENDED</div>
+        <div class="scenario-letter">B</div>
+        <div class="scenario-title">Buy Used (3yr old)</div>
+        <div class="scenario-subtitle">Same model, 3 years old. Biggest depreciation hit already absorbed by first owner.</div>
+        <div class="scenario-line"><span class="scenario-line-label">Purchase Price</span><span id="sc-b-price" class="text-gold">—</span></div>
+        <div class="scenario-line"><span class="scenario-line-label">Total Interest Paid</span><span id="sc-b-interest" class="text-amber">—</span></div>
+        <div class="scenario-line"><span class="scenario-line-label">Running Costs (5yr)</span><span id="sc-b-running">—</span></div>
+        <div class="scenario-line"><span class="scenario-line-label">Est. Resale Value</span><span id="sc-b-resale" class="text-green">—</span></div>
+        <div class="scenario-total">
+          <div class="scenario-total-label">Net 5-Year Ownership Cost</div>
+          <div class="scenario-total-value text-green" id="sc-b-total">—</div>
+        </div>
+      </div>
+
+      <!-- Scenario C -->
+      <div class="scenario-card">
+        <div class="scenario-letter">C</div>
+        <div class="scenario-title">Invest the Difference</div>
+        <div class="scenario-subtitle">Choose a cheaper car and invest the monthly savings. See what compound growth looks like.</div>
+        <div class="scenario-line"><span class="scenario-line-label">Monthly Savings vs New</span><span id="sc-c-monthly" class="text-gold">—</span></div>
+        <div class="scenario-line"><span class="scenario-line-label">Total Invested (5yr)</span><span id="sc-c-invested">—</span></div>
+        <div class="scenario-line"><span class="scenario-line-label">At 7% Annual Return</span><span id="sc-c-growth" class="text-green">—</span></div>
+        <div class="scenario-line"><span class="scenario-line-label">Opportunity Cost of New</span><span id="sc-c-opp" class="text-red">—</span></div>
+        <div class="scenario-total">
+          <div class="scenario-total-label">Portfolio Value After 5 Years</div>
+          <div class="scenario-total-value text-green" id="sc-c-total">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bar comparison chart -->
+    <div class="bar-chart">
+      <div class="label" style="margin-bottom:1.5rem">Total 5-Year Cost Comparison</div>
+      <div class="bar-row">
+        <div class="bar-label">Buy New</div>
+        <div class="bar-track">
+          <div class="bar-fill" id="bar-a" style="width:90%;background:var(--red)">
+            <span id="bar-a-val">RM 0</span>
+          </div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Buy Used</div>
+        <div class="bar-track">
+          <div class="bar-fill" id="bar-b" style="width:60%;background:var(--green)">
+            <span id="bar-b-val">RM 0</span>
+          </div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label" style="color:var(--text)">Invest Diff.</div>
+        <div class="bar-track">
+          <div class="bar-fill" id="bar-c" style="width:40%;background:var(--gold)">
+            <span id="bar-c-val">RM 0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="btn-ghost" onclick="goPage(4)">← Back</button>
+      <button class="btn-primary" onclick="goPage(6)">Get AI Insights →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAGE 6: AI INSIGHTS
+============================================================ -->
+<div id="page-6" class="page pt-nav">
+  <div class="container">
+    <div class="page-header">
+      <div class="page-num">Step 06 of 06</div>
+      <h1 class="page-title">AI Financial Advisor</h1>
+      <p class="page-desc">Ask anything about your car purchase. The AI has full context of your finances and the vehicle you selected.</p>
+    </div>
+
+    <div class="ai-chat-wrap">
+      <!-- Chat panel -->
+      <div class="ai-panel">
+        <div class="ai-panel-header">
+          <div class="ai-pulse"></div>
+          <span class="ai-panel-title">TrueCost AI — Connected</span>
+        </div>
+        <div class="ai-messages" id="ai-messages">
+          <div class="msg msg-ai">
+            <div class="msg-label">TrueCost AI</div>
+            <div class="msg-bubble">
+              Hello. I've reviewed your financial profile and the vehicle you selected. I'm ready to give you an honest analysis. What would you like to understand?
+            </div>
+          </div>
+        </div>
+        <div class="ai-input-row">
+          <input type="text" class="ai-input" id="ai-input" placeholder="Ask anything about your car decision..." onkeydown="if(event.key==='Enter')sendAI()">
+          <button class="ai-send-btn" id="ai-send-btn" onclick="sendAI()">Send</button>
+        </div>
+      </div>
+
+      <!-- Insight cards -->
+      <div class="insights-sidebar" id="insights-sidebar">
+        <div class="insight-card info">
+          <div class="insight-tag">📊 Summary</div>
+          <div class="insight-text" id="insight-summary">Complete steps 2–4 first to unlock your personalised insights.</div>
+        </div>
+        <div class="insight-card caution">
+          <div class="insight-tag">⚠️ Risk Factor</div>
+          <div class="insight-text" id="insight-risk">Your risk assessment will appear here once your data is entered.</div>
+        </div>
+        <div class="insight-card positive">
+          <div class="insight-tag">✅ Better Path</div>
+          <div class="insight-text" id="insight-better">Alternative recommendations will appear after analysis.</div>
+        </div>
+        <div class="insight-card warning">
+          <div class="insight-tag">🚨 Key Warning</div>
+          <div class="insight-text" id="insight-warning">Personalised warnings will appear once data is complete.</div>
+        </div>
+
+        <div style="margin-top:0.5rem">
+          <div class="label" style="margin-bottom:0.75rem">Quick Questions</div>
+          <div style="display:flex;flex-direction:column;gap:0.4rem">
+            <button class="btn-ghost" style="text-align:left;font-size:0.65rem" onclick="quickQuestion('Can I actually afford this car based on my income?')">Can I actually afford this car?</button>
+            <button class="btn-ghost" style="text-align:left;font-size:0.65rem" onclick="quickQuestion('What are the biggest financial risks of buying this specific car?')">What are the risks?</button>
+            <button class="btn-ghost" style="text-align:left;font-size:0.65rem" onclick="quickQuestion('What is a safer car price range for my income?')">What price range suits me?</button>
+            <button class="btn-ghost" style="text-align:left;font-size:0.65rem" onclick="quickQuestion('How should I adjust my budget if I want to buy this car?')">How to adjust my budget?</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="btn-ghost" onclick="goPage(5)">← Back</button>
+      <button class="btn-secondary" onclick="goPage(1)">↺ Start Over</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  salary: 0,
+  loans: 0,
+  expenses: 0,
+  savings: 0,
+  emergency: 0,
+  age: 28,
+  dependents: 0,
+  stability: 'medium',
+  selectedCar: null,
+  budget: 0,
+  dti: 0
+};
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function goPage(n) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + n).classList.add('active');
+  document.querySelectorAll('.nav-step').forEach((s, i) => {
+    s.classList.remove('active', 'done');
+    if (i + 1 === n) s.classList.add('active');
+    else if (i + 1 < n) s.classList.add('done');
+  });
+  window.scrollTo(0, 0);
+  if (n === 4) calcTrueCost();
+  if (n === 5) calcScenarios();
+  if (n === 6) buildInsights();
+}
+
+// ============================================================
+// CAR DATA
+// ============================================================
+const cars = [
+  { id:1, brand:'Perodua', model:'Axia', year:'2023', type:'new', price:40000, engine:1000, emoji:'🚗', specs:'1.0L · A/T · Sedan', mileage:null },
+  { id:2, brand:'Perodua', model:'Myvi', year:'2023', type:'new', price:55000, engine:1300, emoji:'🚗', specs:'1.3L · CVT · Hatchback', mileage:null },
+  { id:3, brand:'Perodua', model:'Ativa', year:'2024', type:'new', price:75000, engine:1000, emoji:'🚙', specs:'1.0T · CVT · SUV', mileage:null },
+  { id:4, brand:'Proton', model:'Saga', year:'2023', type:'new', price:48000, engine:1300, emoji:'🚗', specs:'1.3L · CVT · Sedan', mileage:null },
+  { id:5, brand:'Proton', model:'X50', year:'2022', type:'used', price:75000, engine:1500, emoji:'🚙', specs:'1.5T · DCT · SUV', mileage:'45,200 km' },
+  { id:6, brand:'Toyota', model:'Vios', year:'2021', type:'used', price:68000, engine:1500, emoji:'🚗', specs:'1.5L · CVT · Sedan', mileage:'58,000 km' },
+  { id:7, brand:'Honda', model:'City', year:'2023', type:'new', price:95000, engine:1500, emoji:'🚗', specs:'1.5L · CVT · Sedan', mileage:null },
+  { id:8, brand:'Toyota', model:'Yaris Cross', year:'2024', type:'new', price:115000, engine:1500, emoji:'🚙', specs:'1.5L HEV · SUV', mileage:null },
+];
+
+let filteredCars = [...cars];
+
+function renderCars() {
+  const grid = document.getElementById('cars-grid');
+  const filtered = filteredCars;
+  document.getElementById('car-count').textContent = filtered.length;
+
+  grid.innerHTML = filtered.map(c => `
+    <div class="car-card ${state.selectedCar && state.selectedCar.id === c.id ? 'selected' : ''}" id="car-${c.id}" onclick="selectCar(${c.id})">
+      <div class="car-img-wrap">${c.emoji}</div>
+      <div class="car-info">
+        <div class="car-name">${c.brand} ${c.model}</div>
+        <div class="car-meta">${c.year} · ${c.type === 'new' ? 'Brand New' : 'Used'}</div>
+        <div class="car-price">RM ${c.price.toLocaleString()}</div>
+        <div class="car-specs">
+          <span>${c.specs}</span>
+          ${c.mileage ? `<span>📍 ${c.mileage}</span>` : ''}
+        </div>
+      </div>
+      <div class="car-actions">
+        <button class="car-btn ${state.selectedCar && state.selectedCar.id === c.id ? 'active' : ''}" onclick="event.stopPropagation();selectCar(${c.id})">
+          ${state.selectedCar && state.selectedCar.id === c.id ? '✓ Selected' : 'Select This Car'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectCar(id) {
+  state.selectedCar = cars.find(c => c.id === id);
+  const btn = document.getElementById('btn-next-4');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  renderCars();
+}
+
+function filterCars() {
+  const brand = document.getElementById('filter-brand').value;
+  const type = document.getElementById('filter-type').value;
+  const price = parseInt(document.getElementById('filter-price').value || '0');
+
+  filteredCars = cars.filter(c => {
+    if (brand && c.brand !== brand) return false;
+    if (type && c.type !== type) return false;
+    if (price && c.price > price) return false;
+    return true;
+  });
+  renderCars();
+}
+
+// ============================================================
+// FINANCE CALC
+// ============================================================
+function fmt(n) { return 'RM ' + Math.round(n).toLocaleString(); }
+function fmtN(n) { return Math.round(n).toLocaleString(); }
+
+function recalcFinance() {
+  state.salary = parseFloat(document.getElementById('fi-salary').value) || 0;
+  state.loans = parseFloat(document.getElementById('fi-loans').value) || 0;
+  state.expenses = parseFloat(document.getElementById('fi-expenses').value) || 0;
+  state.savings = parseFloat(document.getElementById('fi-savings').value) || 0;
+  state.emergency = parseFloat(document.getElementById('fi-emergency').value) || 0;
+  state.age = parseInt(document.getElementById('fi-age').value) || 28;
+  state.dependents = parseInt(document.getElementById('fi-dependents').value) || 0;
+  state.stability = document.getElementById('fi-stability').value;
+
+  if (!state.salary) return;
+
+  const disposable = state.salary - state.loans - state.expenses;
+  const stabilityFactor = state.stability === 'high' ? 1 : state.stability === 'medium' ? 0.85 : 0.7;
+  const depFactor = Math.max(0.7, 1 - state.dependents * 0.05);
+  const maxCarPct = 0.20 * stabilityFactor * depFactor;
+  const budget = state.salary * maxCarPct;
+  const emergencyOk = state.emergency >= state.expenses * 6;
+  const dti = ((state.loans + budget) / state.salary) * 100;
+  const maxPrice = budget * 55; // rough loan multiplier for 7yr
+
+  state.budget = budget;
+  state.dti = dti;
+
+  document.getElementById('res-budget').textContent = fmt(budget);
+  document.getElementById('res-maxprice').textContent = fmt(maxPrice);
+  document.getElementById('res-disposable').textContent = fmt(disposable);
+  document.getElementById('res-dti').textContent = dti.toFixed(1) + '%';
+
+  const gauge = document.getElementById('res-gauge');
+  const badge = document.getElementById('res-badge');
+  const advice = document.getElementById('res-advice');
+  const gaugePct = Math.min(100, (dti / 60) * 100);
+  gauge.style.width = gaugePct + '%';
+
+  if (dti < 30) {
+    badge.className = 'badge badge-safe';
+    badge.textContent = 'SAFE';
+    advice.innerHTML = `<p style="font-size:0.78rem;color:var(--text-dim);line-height:1.6">Your debt-to-income ratio is healthy. Based on your income and expenses, you can comfortably afford up to <strong style="color:var(--gold)">${fmt(maxPrice)}</strong> in car value. ${!emergencyOk ? '<br><br>⚠️ Consider building your emergency fund to at least 6 months of expenses (' + fmt(state.expenses * 6) + ') before committing.' : ''}</p>`;
+  } else if (dti < 50) {
+    badge.className = 'badge badge-risky';
+    badge.textContent = 'CAUTION';
+    advice.innerHTML = `<p style="font-size:0.78rem;color:var(--amber);line-height:1.6">Your debt obligations are approaching risky levels. A car at this budget could strain your finances if any unexpected expense arises. Consider targeting a car under <strong>${fmt(maxPrice * 0.75)}</strong> for a safer outcome.</p>`;
+  } else {
+    badge.className = 'badge badge-danger';
+    badge.textContent = 'DANGEROUS';
+    advice.innerHTML = `<p style="font-size:0.78rem;color:var(--red);line-height:1.6">⚠️ High financial risk detected. Your current loan commitments and expenses leave very little room for a car payment. Adding a car at this level could lead to serious financial stress. Recommended action: reduce other loans first or target cars under <strong>${fmt(maxPrice * 0.5)}</strong>.</p>`;
+  }
+}
+
+// ============================================================
+// TRUE COST CALC
+// ============================================================
+function loanPayment(principal, annualRate, months) {
+  const r = annualRate / 12;
+  return principal * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+}
+
+function calcTrueCost() {
+  const car = state.selectedCar;
+  if (!car) return;
+
+  document.getElementById('p4-title').textContent = `True Cost: ${car.brand} ${car.model}`;
+
+  const downPayment = car.price * 0.1;
+  const loanAmt = car.price - downPayment;
+  const rate = car.type === 'new' ? 0.035 : 0.045;
+  const months = 84;
+  const monthly_loan = loanPayment(loanAmt, rate, months);
+  const fuel = car.engine <= 1000 ? 380 : car.engine <= 1300 ? 480 : car.engine <= 1500 ? 580 : 700;
+  const insurance = (car.price * 0.024) / 12;
+  const roadtax = car.engine <= 1000 ? 20 : car.engine <= 1300 ? 30 : car.engine <= 1500 ? 45 : 70;
+  const maint = car.type === 'new' ? 150 : 220;
+  const deprec = car.type === 'new' ? (car.price * 0.15) / 12 : (car.price * 0.10) / 12;
+  const total = monthly_loan + fuel + insurance + roadtax + maint + deprec;
+  const total5yr = total * 60;
+
+  state.trueCost = { monthly_loan, fuel, insurance, roadtax, maint, deprec, total, total5yr, car };
+
+  document.getElementById('cb-loan').textContent = fmt(monthly_loan);
+  document.getElementById('cb-fuel').textContent = fmt(fuel);
+  document.getElementById('cb-insurance').textContent = fmt(insurance + roadtax);
+  document.getElementById('cb-maint').textContent = fmt(maint);
+  document.getElementById('cb-deprec').textContent = fmt(deprec);
+  document.getElementById('cb-5yr').textContent = fmt(total5yr);
+  document.getElementById('cb-total').textContent = fmt(total);
+
+  const pct = state.salary > 0 ? (total / state.salary) * 100 : 0;
+  document.getElementById('ig-pct').textContent = pct.toFixed(0) + '%';
+  document.getElementById('ig-bar').style.width = Math.min(100, (pct / 40) * 100) + '%';
+
+  const safety = document.getElementById('cb-safety');
+  const igAdvice = document.getElementById('ig-advice');
+  if (pct <= 20) {
+    safety.className = 'badge badge-safe'; safety.textContent = '✓ SAFE';
+    igAdvice.textContent = 'This car fits comfortably within your income. You have room for savings and emergencies.';
+    igAdvice.style.color = 'var(--green)';
+  } else if (pct <= 35) {
+    safety.className = 'badge badge-risky'; safety.textContent = '⚠ RISKY';
+    igAdvice.textContent = 'This car will consume a significant portion of your income. Any income disruption could cause financial stress.';
+    igAdvice.style.color = 'var(--amber)';
+  } else {
+    safety.className = 'badge badge-danger'; safety.textContent = '✗ DANGEROUS';
+    igAdvice.textContent = 'Over 35% of your income on a car is financially dangerous. This will severely limit your ability to save, invest, or handle emergencies.';
+    igAdvice.style.color = 'var(--red)';
+  }
+}
+
+// ============================================================
+// SCENARIOS
+// ============================================================
+function calcScenarios() {
+  const car = state.selectedCar;
+  if (!car) return;
+
+  const tc = state.trueCost;
+  const newPrice = car.price;
+  const usedPrice = Math.round(newPrice * 0.65);
+
+  // Scenario A: New
+  const aInterest = (tc.monthly_loan * 84) - (newPrice * 0.9);
+  const aRunning = (tc.fuel + tc.insurance + tc.roadtax + tc.maint) * 60;
+  const aResale = Math.round(newPrice * 0.45);
+  const aTotal = newPrice * 0.9 + aInterest + aRunning - aResale;
+
+  // Scenario B: Used
+  const usedLoan = loanPayment(usedPrice * 0.9, 0.045, 84);
+  const bInterest = (usedLoan * 84) - (usedPrice * 0.9);
+  const bRunning = (tc.fuel + tc.insurance * 0.7 + tc.roadtax + tc.maint * 1.3) * 60;
+  const bResale = Math.round(usedPrice * 0.45);
+  const bTotal = usedPrice * 0.9 + bInterest + bRunning - bResale;
+
+  // Scenario C: Invest diff
+  const monthlyDiff = tc.total - (usedLoan + tc.fuel + tc.insurance * 0.7 + tc.roadtax + tc.maint * 1.3);
+  const invested = monthlyDiff * 60;
+  const fv = monthlyDiff * ((Math.pow(1.07/12 + 1, 60) - 1) / (0.07/12));
+  const cOpp = aTotal - bTotal;
+
+  document.getElementById('sc-a-price').textContent = fmt(newPrice);
+  document.getElementById('sc-a-interest').textContent = fmt(aInterest);
+  document.getElementById('sc-a-running').textContent = fmt(aRunning);
+  document.getElementById('sc-a-resale').textContent = '+' + fmt(aResale);
+  document.getElementById('sc-a-total').textContent = fmt(aTotal);
+
+  document.getElementById('sc-b-price').textContent = fmt(usedPrice);
+  document.getElementById('sc-b-interest').textContent = fmt(bInterest);
+  document.getElementById('sc-b-running').textContent = fmt(bRunning);
+  document.getElementById('sc-b-resale').textContent = '+' + fmt(bResale);
+  document.getElementById('sc-b-total').textContent = fmt(bTotal);
+
+  document.getElementById('sc-c-monthly').textContent = fmt(Math.max(0, monthlyDiff));
+  document.getElementById('sc-c-invested').textContent = fmt(Math.max(0, invested));
+  document.getElementById('sc-c-growth').textContent = fmt(Math.max(0, fv));
+  document.getElementById('sc-c-opp').textContent = fmt(Math.max(0, cOpp));
+  document.getElementById('sc-c-total').textContent = fmt(Math.max(0, fv));
+
+  // Bars
+  const maxVal = Math.max(aTotal, bTotal, fv);
+  document.getElementById('bar-a').style.width = (aTotal / maxVal * 95) + '%';
+  document.getElementById('bar-b').style.width = (bTotal / maxVal * 95) + '%';
+  document.getElementById('bar-c').style.width = (fv / maxVal * 95) + '%';
+  document.getElementById('bar-a-val').textContent = fmt(aTotal);
+  document.getElementById('bar-b-val').textContent = fmt(bTotal);
+  document.getElementById('bar-c-val').textContent = fmt(fv);
+}
+
+// ============================================================
+// AI INSIGHTS SIDEBAR
+// ============================================================
+function buildInsights() {
+  const car = state.selectedCar;
+  const tc = state.trueCost;
+  if (!car || !tc) return;
+
+  const pct = state.salary > 0 ? (tc.total / state.salary * 100).toFixed(0) : '?';
+
+  document.getElementById('insight-summary').textContent =
+    `${car.brand} ${car.model} (${car.year}) will cost you RM${Math.round(tc.total).toLocaleString()}/month in total, which is ${pct}% of your income. The loan alone is RM${Math.round(tc.monthly_loan).toLocaleString()}/month.`;
+
+  const dti = state.dti;
+  document.getElementById('insight-risk').textContent =
+    dti > 50 ? `Critical: Your debt-to-income ratio of ${dti.toFixed(0)}% is dangerously high. Any job disruption could make payments impossible.` :
+    dti > 30 ? `Moderate risk: Your DTI of ${dti.toFixed(0)}% means this car will stretch your budget. One unexpected bill could cause missed payments.` :
+    `Your DTI of ${dti.toFixed(0)}% is within healthy range, but always maintain 6 months of emergency reserves.`;
+
+  const saferPrice = Math.round(state.salary * 0.15 * 55);
+  document.getElementById('insight-better').textContent =
+    `Based on your income of RM${state.salary.toLocaleString()}/month, a safer car would be priced around RM${saferPrice.toLocaleString()} or below. This keeps total costs under 20% of income.`;
+
+  const yearsSaving = 3;
+  const savingAmt = tc.total * 12 * yearsSaving;
+  document.getElementById('insight-warning').textContent =
+    `Over 3 years, this car will cost RM${Math.round(savingAmt).toLocaleString()} in total. That money, invested, could grow significantly. Always compare the cost of ownership against your long-term financial goals.`;
+}
+
+// ============================================================
+// AI CHAT
+// ============================================================
+function buildSystemPrompt() {
+  const car = state.selectedCar;
+  const tc = state.trueCost;
+  const pct = (state.salary > 0 && tc) ? (tc.total / state.salary * 100).toFixed(1) : 'unknown';
+
+  return `You are TrueCost AI, a Malaysian personal finance advisor specialising in car affordability. You speak in clear, simple English — not jargon. You are honest even when the truth is uncomfortable.
+
+USER'S FINANCIAL PROFILE:
+- Monthly salary: RM${state.salary.toLocaleString()}
+- Existing loans: RM${state.loans.toLocaleString()}/month
+- Monthly expenses: RM${state.expenses.toLocaleString()}
+- Savings: RM${state.savings.toLocaleString()}
+- Emergency fund: RM${state.emergency.toLocaleString()}
+- Age: ${state.age}, Dependents: ${state.dependents}, Job stability: ${state.stability}
+- Debt-to-income ratio: ${state.dti.toFixed(1)}%
+
+SELECTED VEHICLE:
+${car ? `- ${car.brand} ${car.model} (${car.year}, ${car.type})
+- Purchase price: RM${car.price.toLocaleString()}
+- True monthly cost: RM${tc ? Math.round(tc.total).toLocaleString() : 'unknown'}
+- % of income: ${pct}%
+- Loan installment: RM${tc ? Math.round(tc.monthly_loan).toLocaleString() : 'unknown'}/month` : 'No car selected yet.'}
+
+Give advice that is specific to their numbers. Be direct. If the purchase is financially dangerous, say so clearly and explain why. Keep responses under 200 words. Use simple language that a non-finance person can understand.`;
+}
+
+async function sendAI() {
+  const input = document.getElementById('ai-input');
+  const btn = document.getElementById('ai-send-btn');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  appendMsg('user', msg);
+  input.value = '';
+  btn.disabled = true;
+
+  // Typing indicator
+  const typingId = 'typing-' + Date.now();
+  const container = document.getElementById('ai-messages');
+  const typingEl = document.createElement('div');
+  typingEl.id = typingId;
+  typingEl.className = 'msg msg-ai';
+  typingEl.innerHTML = `<div class="msg-label">TrueCost AI</div><div class="msg-bubble"><div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+  container.appendChild(typingEl);
+  container.scrollTop = container.scrollHeight;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: buildSystemPrompt(),
+        messages: [{ role: 'user', content: msg }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content?.map(b => b.text || '').join('') || 'I was unable to generate a response. Please try again.';
+
+    document.getElementById(typingId)?.remove();
+    appendMsg('ai', text);
+  } catch (err) {
+    document.getElementById(typingId)?.remove();
+    appendMsg('ai', 'Connection error. Please check your network and try again.');
+  }
+
+  btn.disabled = false;
+}
+
+function quickQuestion(q) {
+  document.getElementById('ai-input').value = q;
+  sendAI();
+}
+
+function appendMsg(role, text) {
+  const container = document.getElementById('ai-messages');
+  const el = document.createElement('div');
+  el.className = `msg msg-${role}`;
+  el.innerHTML = `
+    <div class="msg-label">${role === 'ai' ? 'TrueCost AI' : 'You'}</div>
+    <div class="msg-bubble">${text.replace(/\n/g, '<br>')}</div>
+  `;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderCars();
+</script>
+</body>
+</html>
