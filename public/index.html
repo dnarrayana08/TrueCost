@@ -599,8 +599,8 @@
   <div class="container">
     <div class="page-header">
       <div class="page-num">Step 05 of 06</div>
-      <h1 class="page-title">Wealth Gap Analysis</h1>
-      <p class="page-desc">Two paths, one decision. See exactly how much wealth you build — or sacrifice — depending on which car you choose.</p>
+      <h1 class="page-title" id="p5-title">Wealth Gap Analysis</h1>
+       <p class="page-desc" id="p5-desc">Two paths, one decision. See exactly how much wealth you build — or sacrifice — depending on which car you choose.</p>
     </div>
 
     <!-- Summary stats -->
@@ -680,7 +680,7 @@
           <div class="wc-track-outcome" style="color:#e05252" id="wc-a-outcome">RM 0 portfolio after selected horizon</div>
         </div>
         <div class="wc-track wc-track-b">
-          <div class="wc-track-label" style="color:#4caf7d">Track B — Pre-owned (~65% of new price)</div>
+          <div class="wc-track-label" style="color:#4caf7d" id="wc-b-label">Track B — Alternative Option (~65% of price)</div>
           <div class="wc-track-emi" id="wc-b-emi" style="color:#4caf7d">RM —</div>
           <div class="wc-track-sub">/month lower total cost</div>
           <div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-faint)">Monthly saving invested</div>
@@ -706,10 +706,10 @@
         </div>
         <!-- Scenario B -->
         <div class="wc-sc wc-sc-featured">
-          <div style="font-family:var(--mono);font-size:0.58rem;color:var(--green);letter-spacing:0.1em;margin-bottom:4px">✓ RECOMMENDED</div>
+          <div style="font-family:var(--mono);font-size:0.58rem;color:var(--green);letter-spacing:0.1em;margin-bottom:4px" id="sc-b-tag">✦ EXPLORE THIS</div>
           <div class="wc-sc-letter">B</div>
-          <div class="wc-sc-title">Buy Used (3yr old)</div>
-          <div class="wc-sc-sub">Biggest depreciation already absorbed.</div>
+          <div class="wc-sc-title" id="sc-b-title">Alternative Option</div>
+          <div class="wc-sc-sub" id="sc-b-sub">A lower-cost path worth knowing about.</div>
           <div class="wc-sc-row"><span class="wc-sc-row-label">Purchase Price</span><span id="sc-b-price" class="text-gold">—</span></div>
           <div class="wc-sc-row"><span class="wc-sc-row-label">Total Interest Paid</span><span id="sc-b-interest" class="text-amber">—</span></div>
           <div class="wc-sc-row"><span class="wc-sc-row-label">Running Costs (5yr)</span><span id="sc-b-running">—</span></div>
@@ -737,7 +737,7 @@
           <div class="wc-bar-track"><div class="wc-bar-fill" id="bar-a" style="width:0%;background:#e05252"><span id="bar-a-val">RM 0</span></div></div>
         </div>
         <div class="wc-bar-row">
-          <div class="wc-bar-label">Buy Used (B)</div>
+          <div class="wc-bar-label" id="bar-b-label">Alternative (B)</div>
           <div class="wc-bar-track"><div class="wc-bar-fill" id="bar-b" style="width:0%;background:#4caf7d"><span id="bar-b-val">RM 0</span></div></div>
         </div>
         <div class="wc-bar-row">
@@ -893,7 +893,7 @@ function goPage(n) {
     else if (i + 1 < n) s.classList.add('done');
   });
   if (n === 4) calcTrueCost();
-  if (n === 5) { calcScenarios(); drawWealthCharts(); }
+  if (n === 5) { calcScenarios(); drawWealthCharts(); updateP5Framing(); }
   if (n === 6) buildInsights();
 }
 
@@ -1069,29 +1069,6 @@ function selectCar(id) {
 }
 
 // ============================================================
-// TRUE COST PRE-CALCULATOR (used before AI recommendations)
-// ============================================================
-function calcTrueCostForCar(car) {
-  const isNew = car.condition === 'New';
-  const engineCC = car.engineCC || 1500;
-  const downPayment = car.price * 0.1;
-  const loanAmt = car.price - downPayment;
-  const rate = isNew ? 0.035 : 0.045;
-  const months = (state.loanTermYears || 7) * 12;
-  const r = rate / 12;
-  const monthly_loan = loanAmt * r * Math.pow(1+r, months) / (Math.pow(1+r, months) - 1);
-  const fuel = engineCC<=1000?380:engineCC<=1300?480:engineCC<=1500?580:engineCC<=2000?700:900;
-  const insurance = (car.price * 0.024) / 12;
-  const roadtax = engineCC<=1000?20:engineCC<=1300?30:engineCC<=1500?45:engineCC<=2000?70:100;
-  const maint = isNew ? 150 : 220;
-  const deprec = isNew ? (car.price*0.15)/12 : (car.price*0.10)/12;
-  const total = monthly_loan + fuel + insurance + roadtax + maint + deprec;
-  const pctOfIncome = state.salary > 0 ? (total / state.salary) * 100 : 999;
-  const verdict = pctOfIncome <= 20 ? 'SAFE' : pctOfIncome <= 35 ? 'RISKY' : 'DANGEROUS';
-  return { monthly_loan, fuel, insurance, roadtax, maint, deprec, total, pctOfIncome, verdict };
-}
-
-// ============================================================
 // AI RECOMMENDATIONS (Page 3)
 // ============================================================
 async function runRecommendationsP3() {
@@ -1099,52 +1076,28 @@ async function runRecommendationsP3() {
   const btn = document.getElementById('btn-reco-p3');
   const bannerText = document.getElementById('reco-banner-text');
   btn.disabled = true; btn.textContent = 'Finding picks...';
-  bannerText.textContent = 'Calculating true cost for all cars...';
-
-  // Pre-calculate true cost for every car in the filtered list
-  const carsWithCost = filteredCars.map(c => {
-    const tc = calcTrueCostForCar(c);
-    return { ...c, tc };
-  });
-
-  // Filter out DANGEROUS cars first — only show SAFE or RISKY to AI
-  const affordableCars = carsWithCost.filter(c => c.tc.verdict !== 'DANGEROUS');
-
-  // If nothing is affordable, loosen to show RISKY cars too (already the case), or warn
-  const carsForAI = (affordableCars.length >= 3 ? affordableCars : carsWithCost)
-    .sort((a, b) => a.tc.pctOfIncome - b.tc.pctOfIncome) // cheapest relative to income first
-    .slice(0, 40);
-
-  bannerText.textContent = `Found ${carsForAI.length} financially viable cars. AI is picking the best 3...`;
-
-  // Build context with full true cost breakdown for each car
-  const carListContext = carsForAI.map(c =>
-    `ID:${c.id} | ${c.make} ${c.model} ${c.variant} (${c.year}, ${c.condition}) | Price: RM${c.price.toLocaleString()} | ` +
-    `TRUE MONTHLY COST: RM${Math.round(c.tc.total).toLocaleString()} (${c.tc.pctOfIncome.toFixed(1)}% of income) | ` +
-    `Breakdown — Loan: RM${Math.round(c.tc.monthly_loan)}, Fuel: RM${c.tc.fuel}, Insurance+Tax: RM${Math.round(c.tc.insurance+c.tc.roadtax)}, Maint: RM${c.tc.maint}, Depreciation: RM${Math.round(c.tc.deprec)} | ` +
-    `Verdict: ${c.tc.verdict} | ${c.engine||c.engineCC+'cc'} ${c.transmission} ${c.bodyType}`
-  ).join('\n');
-
-  const prompt = `${buildSystemPrompt()}\n\nIMPORTANT: Each car below already has its TRUE monthly cost pre-calculated (loan + fuel + insurance + road tax + maintenance + depreciation). Use these true costs — NOT just the loan installment — to recommend cars.\n\nOnly recommend cars rated SAFE or RISKY. Never recommend a DANGEROUS car.\n\nHere are the financially viable cars with their true costs:\n${carListContext}\n\nRecommend the 3 best cars based on true total cost vs income. Respond ONLY with JSON array (no markdown):\n[{"id":2,"reason":"True monthly RM X — X% of income. Short reason max 15 words"},{"id":1,"reason":"..."},{"id":4,"reason":"..."}]`;
-
+  bannerText.textContent = 'AI is analysing your profile and matching cars...';
+  // Send first 40 filtered cars (or all if fewer) for AI to pick from
+  // Build a salary-appropriate car pool — sample from within the user's actual budget range
+  const maxP = state.maxPrice || (state.salary * 12 * 0.25);
+  const minP = maxP * 0.4;
+  const suitableCars = CAR_DATASET.filter(c => c.price >= minP && c.price <= maxP * 1.1);
+  // If too few, widen the net
+  const pool = suitableCars.length >= 6 ? suitableCars : CAR_DATASET.filter(c => c.price <= maxP * 1.2);
+  // Shuffle so AI sees variety, not always the same first 40
+  const shuffled = pool.sort(() => Math.random() - 0.5).slice(0, 40);
+  const carListContext = shuffled.map(c=>`ID:${c.id} | ${c.make} ${c.model} ${c.variant} (${c.year}, ${c.condition}) | RM${c.price.toLocaleString()} | ${c.engine} ${c.transmission} ${c.bodyType} | ${c.mileage||'New'}`).join('\n');
+  const prompt = `${buildSystemPrompt()}\n\nUser's safe car budget: RM${Math.round(state.budget).toLocaleString()}/month. Max car price: RM${Math.round(maxP).toLocaleString()}.\n\nHere are the available cars in their price range:\n${carListContext}\n\nRecommend the 3 best cars that match this user's salary level and lifestyle — do NOT always pick the cheapest. Pick cars appropriate to their income. Respond ONLY with JSON array (no markdown):\n[{"id":2,"reason":"Short reason max 15 words"},{"id":1,"reason":"Short reason"},{"id":4,"reason":"Short reason"}]`;
+  
   try {
-    const raw = await callGroq([{role:'user',content:prompt}], 500);
+    const raw = await callGroq([{role:'user',content:prompt}], 400);
     const recs = JSON.parse(raw.replace(/```json|```/g,'').trim());
-
-    // Safety check: remove any AI picks that are actually DANGEROUS according to our own calc
-    const safePicks = recs.filter(r => {
-      const car = carsWithCost.find(c => c.id === r.id);
-      return car && car.tc.verdict !== 'DANGEROUS';
-    });
-    const finalPicks = safePicks.length >= 1 ? safePicks : recs; // fallback if AI ignored all
-
-    state.aiRecoIds = finalPicks.map(r=>r.id);
+    state.aiRecoIds = recs.map(r=>r.id);
     state.aiRecoReasons = {};
-    finalPicks.forEach(r => { state.aiRecoReasons[r.id] = r.reason; });
+    recs.forEach(r => { state.aiRecoReasons[r.id] = r.reason; });
     applyFilters();
     const topCar = CAR_DATASET.find(c=>c.id===state.aiRecoIds[0]);
-    const topTc = topCar ? calcTrueCostForCar(topCar) : null;
-    bannerText.innerHTML = `✦ AI found <strong style="color:var(--green)">${finalPicks.length} recommended cars</strong>.${topCar ? ` Top pick: <strong>${topCar.make} ${topCar.model}</strong> — true cost <strong style="color:var(--gold)">RM${Math.round(topTc.total).toLocaleString()}/mo</strong> (${topTc.pctOfIncome.toFixed(1)}% of income).` : ''}`;
+    bannerText.innerHTML = `✦ AI found <strong style="color:var(--green)">${recs.length} recommended cars</strong>.${topCar?` Top pick: <strong>${topCar.brand} ${topCar.model}</strong>.`:''}`;
     btn.textContent = '↺ Refresh Picks';
   } catch(err) {
     bannerText.innerHTML = `<span style="color:var(--red)">Could not get AI recommendations: ${err.message}</span>`;
@@ -1512,7 +1465,7 @@ async function callGroq(messages, maxTokens=1000) {
   const response = await fetch('/api/chat', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ model:'llama-3.3-70b-versatile', max_tokens:maxTokens, messages })
+    body: JSON.stringify({ model:'llama-3.1-8b-instant', max_tokens:maxTokens, messages })
   });
   if (!response.ok) { const t = await response.text(); throw new Error('API error: '+t.slice(0,120)); }
   const data = await response.json();
@@ -1528,7 +1481,7 @@ function buildSystemPrompt() {
   const trackBStr = state.trackBCar
     ? `Track B alternative: ${state.trackBCar.make} ${state.trackBCar.model} (${state.trackBCar.year}, ${state.trackBCar.condition}) at RM${state.trackBCar.price.toLocaleString()}`
     : 'Track B: estimated at 65% of selected car price';
-  return `You are TrueCost AI, a Malaysian personal finance advisor specialising in car affordability. Speak clearly and directly.\n\nUSER FINANCIAL PROFILE:\n- Salary: RM${state.salary.toLocaleString()}/month\n- Existing loans: RM${state.loans.toLocaleString()}/month\n- Living expenses: RM${state.expenses.toLocaleString()}/month\n- Savings: RM${state.savings.toLocaleString()}\n- Emergency fund: RM${state.emergency.toLocaleString()}\n- Age: ${state.age} | Dependents: ${state.dependents} | Stability: ${state.stability}\n- DTI: ${state.dti.toFixed(1)}%\n- Loan term: ${state.loanTermYears||7} years\n${car ? `\nSELECTED CAR (Track A):\n- ${carName}\n- Price: RM${car.price.toLocaleString()} | Engine: ${car.engine||car.engineCC+'cc'} | Body: ${car.bodyType}\n- True monthly cost: RM${tc?Math.round(tc.total).toLocaleString():'?'} (${pct}% of income)\n- 5-year total: RM${tc?Math.round(tc.total5yr).toLocaleString():'?'}\n- ${trackBStr}` : 'No car selected.'}\n\nMalaysian context: max 15–20% of income on car, DTI under 30%, 6 months emergency fund.`;
+  return `You are TrueCost AI, a Malaysian personal finance advisor specialising in car affordability. Speak clearly and directly.\n\nUSER FINANCIAL PROFILE:\n- Salary: RM${state.salary.toLocaleString()}/month\n- Existing loans: RM${state.loans.toLocaleString()}/month\n- Living expenses: RM${state.expenses.toLocaleString()}/month\n- Savings: RM${state.savings.toLocaleString()}\n- Emergency fund: RM${state.emergency.toLocaleString()}\n- Age: ${state.age} | Dependents: ${state.dependents} | Stability: ${state.stability}\n- DTI: ${state.dti.toFixed(1)}%\n- Loan term: ${state.loanTermYears||7} years\n${car ? `\nSELECTED CAR (Track A):\n- ${carName}\n- Price: RM${car.price.toLocaleString()} | Engine: ${car.engine||car.engineCC+'cc'} | Body: ${car.bodyType}\n- True monthly cost: RM${tc?Math.round(tc.total).toLocaleString():'?'} (${pct}% of income)\n- 5-year total: RM${tc?Math.round(tc.total5yr).toLocaleString():'?'}\n- ${trackBStr}` : 'No car selected.'}\n\nMalaysian context: max 20–30% of income on car, DTI under 30%, 6 months emergency fund.`;
 }
 
 // ============================================================
@@ -1606,6 +1559,35 @@ function appendMsg(role,text) {
 // ============================================================
 populateFilters();
 applyFilters();
+
+// Dynamic Page 5 framing based on whether car was AI-picked or over budget
+function updateP5Framing() {
+  const isAiPicked = state.selectedCar && state.aiRecoIds.includes(state.selectedCar);
+  const car = state.selectedCar ? CAR_DATASET.find(c => c.id === state.selectedCar) : null;
+  const tc = car ? calcTrueCost(car) : null;
+  const pct = tc && state.salary ? (tc.total / state.salary) * 100 : 0;
+  const isOverBudget = pct > 30;
+
+  if (isAiPicked && !isOverBudget) {
+    // Soft framing — open their mind, not convince them
+    document.getElementById('p5-title').textContent = 'Explore Your Options';
+    document.getElementById('p5-desc').textContent = 'Your chosen car fits your budget well. Here\'s what an even leaner choice could unlock — purely for your awareness.';
+    document.getElementById('wc-b-label').textContent = 'Track B — Lighter Alternative (optional)';
+    document.getElementById('sc-b-tag').textContent = '✦ CURIOUS? EXPLORE THIS';
+    document.getElementById('sc-b-title').textContent = 'Go Even Leaner';
+    document.getElementById('sc-b-sub').textContent = 'Your pick is already solid. This shows what extra savings could grow into.';
+    document.getElementById('bar-b-label').textContent = 'Leaner Option (B)';
+  } else {
+    // Stronger framing — car exceeds budget, we need to convince
+    document.getElementById('p5-title').textContent = 'Wealth Gap Analysis';
+    document.getElementById('p5-desc').textContent = 'Your selected car exceeds the recommended budget. See the financial cost of that decision — and what a smarter alternative could build for you.';
+    document.getElementById('wc-b-label').textContent = 'Track B — Pre-owned (~65% of price)';
+    document.getElementById('sc-b-tag').textContent = '✓ RECOMMENDED';
+    document.getElementById('sc-b-title').textContent = 'Buy Used (3yr old)';
+    document.getElementById('sc-b-sub').textContent = 'Biggest depreciation already absorbed.';
+    document.getElementById('bar-b-label').textContent = 'Buy Used (B)';
+  }
+}
 
 function resetFilters() {
   document.getElementById('filter-brand').value = '';
