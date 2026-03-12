@@ -1069,6 +1069,29 @@ function selectCar(id) {
 }
 
 // ============================================================
+// TRUE COST PRE-CALCULATOR (used before AI recommendations)
+// ============================================================
+function calcTrueCostForCar(car) {
+  const isNew = car.condition === 'New';
+  const engineCC = car.engineCC || 1500;
+  const downPayment = car.price * 0.1;
+  const loanAmt = car.price - downPayment;
+  const rate = isNew ? 0.035 : 0.045;
+  const months = (state.loanTermYears || 7) * 12;
+  const r = rate / 12;
+  const monthly_loan = loanAmt * r * Math.pow(1+r, months) / (Math.pow(1+r, months) - 1);
+  const fuel = engineCC<=1000?380:engineCC<=1300?480:engineCC<=1500?580:engineCC<=2000?700:900;
+  const insurance = (car.price * 0.024) / 12;
+  const roadtax = engineCC<=1000?20:engineCC<=1300?30:engineCC<=1500?45:engineCC<=2000?70:100;
+  const maint = isNew ? 150 : 220;
+  const deprec = isNew ? (car.price*0.15)/12 : (car.price*0.10)/12;
+  const total = monthly_loan + fuel + insurance + roadtax + maint + deprec;
+  const pctOfIncome = state.salary > 0 ? (total / state.salary) * 100 : 999;
+  const verdict = pctOfIncome <= 20 ? 'SAFE' : pctOfIncome <= 35 ? 'RISKY' : 'DANGEROUS';
+  return { monthly_loan, fuel, insurance, roadtax, maint, deprec, total, pctOfIncome, verdict };
+}
+
+// ============================================================
 // AI RECOMMENDATIONS (Page 3)
 // ============================================================
 async function runRecommendationsP3() {
@@ -1076,20 +1099,52 @@ async function runRecommendationsP3() {
   const btn = document.getElementById('btn-reco-p3');
   const bannerText = document.getElementById('reco-banner-text');
   btn.disabled = true; btn.textContent = 'Finding picks...';
-  bannerText.textContent = 'AI is analysing your profile and matching cars...';
-  // Send first 40 filtered cars (or all if fewer) for AI to pick from
-  const carsForAI = filteredCars.slice(0, 40);
-  const carListContext = carsForAI.map(c=>`ID:${c.id} | ${c.make} ${c.model} ${c.variant} (${c.year}, ${c.condition}) | RM${c.price.toLocaleString()} | ${c.engine} ${c.transmission} ${c.bodyType} | ${c.mileage||'New'}`).join('\n');
-  const prompt = `${buildSystemPrompt()}\n\nHere are the available cars:\n${carListContext}\n\nRecommend the 3 most financially suitable cars. Respond ONLY with JSON array (no markdown):\n[{"id":2,"reason":"Short reason max 15 words"},{"id":1,"reason":"Short reason"},{"id":4,"reason":"Short reason"}]`;
+  bannerText.textContent = 'Calculating true cost for all cars...';
+
+  // Pre-calculate true cost for every car in the filtered list
+  const carsWithCost = filteredCars.map(c => {
+    const tc = calcTrueCostForCar(c);
+    return { ...c, tc };
+  });
+
+  // Filter out DANGEROUS cars first — only show SAFE or RISKY to AI
+  const affordableCars = carsWithCost.filter(c => c.tc.verdict !== 'DANGEROUS');
+
+  // If nothing is affordable, loosen to show RISKY cars too (already the case), or warn
+  const carsForAI = (affordableCars.length >= 3 ? affordableCars : carsWithCost)
+    .sort((a, b) => a.tc.pctOfIncome - b.tc.pctOfIncome) // cheapest relative to income first
+    .slice(0, 40);
+
+  bannerText.textContent = `Found ${carsForAI.length} financially viable cars. AI is picking the best 3...`;
+
+  // Build context with full true cost breakdown for each car
+  const carListContext = carsForAI.map(c =>
+    `ID:${c.id} | ${c.make} ${c.model} ${c.variant} (${c.year}, ${c.condition}) | Price: RM${c.price.toLocaleString()} | ` +
+    `TRUE MONTHLY COST: RM${Math.round(c.tc.total).toLocaleString()} (${c.tc.pctOfIncome.toFixed(1)}% of income) | ` +
+    `Breakdown — Loan: RM${Math.round(c.tc.monthly_loan)}, Fuel: RM${c.tc.fuel}, Insurance+Tax: RM${Math.round(c.tc.insurance+c.tc.roadtax)}, Maint: RM${c.tc.maint}, Depreciation: RM${Math.round(c.tc.deprec)} | ` +
+    `Verdict: ${c.tc.verdict} | ${c.engine||c.engineCC+'cc'} ${c.transmission} ${c.bodyType}`
+  ).join('\n');
+
+  const prompt = `${buildSystemPrompt()}\n\nIMPORTANT: Each car below already has its TRUE monthly cost pre-calculated (loan + fuel + insurance + road tax + maintenance + depreciation). Use these true costs — NOT just the loan installment — to recommend cars.\n\nOnly recommend cars rated SAFE or RISKY. Never recommend a DANGEROUS car.\n\nHere are the financially viable cars with their true costs:\n${carListContext}\n\nRecommend the 3 best cars based on true total cost vs income. Respond ONLY with JSON array (no markdown):\n[{"id":2,"reason":"True monthly RM X — X% of income. Short reason max 15 words"},{"id":1,"reason":"..."},{"id":4,"reason":"..."}]`;
+
   try {
-    const raw = await callGroq([{role:'user',content:prompt}], 400);
+    const raw = await callGroq([{role:'user',content:prompt}], 500);
     const recs = JSON.parse(raw.replace(/```json|```/g,'').trim());
-    state.aiRecoIds = recs.map(r=>r.id);
+
+    // Safety check: remove any AI picks that are actually DANGEROUS according to our own calc
+    const safePicks = recs.filter(r => {
+      const car = carsWithCost.find(c => c.id === r.id);
+      return car && car.tc.verdict !== 'DANGEROUS';
+    });
+    const finalPicks = safePicks.length >= 1 ? safePicks : recs; // fallback if AI ignored all
+
+    state.aiRecoIds = finalPicks.map(r=>r.id);
     state.aiRecoReasons = {};
-    recs.forEach(r => { state.aiRecoReasons[r.id] = r.reason; });
+    finalPicks.forEach(r => { state.aiRecoReasons[r.id] = r.reason; });
     applyFilters();
     const topCar = CAR_DATASET.find(c=>c.id===state.aiRecoIds[0]);
-    bannerText.innerHTML = `✦ AI found <strong style="color:var(--green)">${recs.length} recommended cars</strong>.${topCar?` Top pick: <strong>${topCar.brand} ${topCar.model}</strong>.`:''}`;
+    const topTc = topCar ? calcTrueCostForCar(topCar) : null;
+    bannerText.innerHTML = `✦ AI found <strong style="color:var(--green)">${finalPicks.length} recommended cars</strong>.${topCar ? ` Top pick: <strong>${topCar.make} ${topCar.model}</strong> — true cost <strong style="color:var(--gold)">RM${Math.round(topTc.total).toLocaleString()}/mo</strong> (${topTc.pctOfIncome.toFixed(1)}% of income).` : ''}`;
     btn.textContent = '↺ Refresh Picks';
   } catch(err) {
     bannerText.innerHTML = `<span style="color:var(--red)">Could not get AI recommendations: ${err.message}</span>`;
