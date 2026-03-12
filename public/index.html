@@ -1087,7 +1087,7 @@ async function runRecommendationsP3() {
     state.aiRecoIds = recs.map(r=>r.id);
     state.aiRecoReasons = {};
     recs.forEach(r => { state.aiRecoReasons[r.id] = r.reason; });
-    renderCars();
+    applyFilters();
     const topCar = CAR_DATASET.find(c=>c.id===state.aiRecoIds[0]);
     bannerText.innerHTML = `✦ AI found <strong style="color:var(--green)">${recs.length} recommended cars</strong>.${topCar?` Top pick: <strong>${topCar.brand} ${topCar.model}</strong>.`:''}`;
     btn.textContent = '↺ Refresh Picks';
