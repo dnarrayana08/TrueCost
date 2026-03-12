@@ -512,7 +512,6 @@
         <select class="filter-select" id="filter-condition" onchange="applyFilters()">
           <option value="">All Conditions</option>
           <option value="New">New</option>
-          <option value="Used">Used</option>
           <option value="Recond">Recond</option>
         </select>
         <select class="filter-select" id="filter-body" onchange="applyFilters()">
@@ -959,7 +958,11 @@ function applyFilters() {
   filteredCars = CAR_DATASET.filter(c => {
     if (make     && c.make !== make) return false;
     if (model    && c.model !== model) return false;
-    if (cond     && c.condition !== cond) return false;
+    if (cond) {
+  if (c.condition !== cond) return false;
+} else {
+  if (c.condition === 'Used') return false;
+}
     if (bodyType && c.bodyType !== bodyType) return false;
     if (maxPrice && c.price > maxPrice) return false;
     if (search   && !(
@@ -1217,58 +1220,41 @@ function findTrackBCar(selectedCar) {
   const make  = selectedCar.make || selectedCar.brand;
   const model = selectedCar.model;
 
-  // 1. Same make+model, used or recond, cheaper
-  let candidates = CAR_DATASET.filter(c =>
-    c.make === make &&
-    c.model === model &&
-    (c.condition === 'Used' || c.condition === 'Recond') &&
-    c.price < price &&
-    c.id !== selectedCar.id
-  );
-  if (candidates.length) {
-    // pick the cheapest
-    candidates.sort((a,b) => a.price - b.price);
-    return candidates[0];
-  }
 
-  // 2. Same make, same body type, used/recond, cheaper
-  candidates = CAR_DATASET.filter(c =>
-    c.make === make &&
-    c.bodyType === selectedCar.bodyType &&
-    (c.condition === 'Used' || c.condition === 'Recond') &&
-    c.price < price &&
-    c.id !== selectedCar.id
-  );
-  if (candidates.length) {
-    candidates.sort((a,b) => a.price - b.price);
-    return candidates[0];
-  }
+  // 1. Same make+model, USED only, cheaper
+let candidates = CAR_DATASET.filter(c =>
+  c.make === make &&
+  c.model === model &&
+  c.condition === 'Used' &&
+  c.price < price &&
+  c.id !== selectedCar.id
+);
 
-  // 3. Same body type any make, used/recond, price within 50-80% of selected
-  candidates = CAR_DATASET.filter(c =>
-    c.bodyType === selectedCar.bodyType &&
-    (c.condition === 'Used' || c.condition === 'Recond') &&
-    c.price >= price * 0.40 &&
-    c.price < price * 0.80 &&
-    c.id !== selectedCar.id
-  );
-  if (candidates.length) {
-    candidates.sort((a,b) => a.price - b.price);
-    return candidates[0];
-  }
+// 2. Same make, same body type, USED only, cheaper
+candidates = CAR_DATASET.filter(c =>
+  c.make === make &&
+  c.bodyType === selectedCar.bodyType &&
+  c.condition === 'Used' &&
+  c.price < price &&
+  c.id !== selectedCar.id
+);
 
-  // 4. Fallback: any used/recond cheaper than 70% of price
-  candidates = CAR_DATASET.filter(c =>
-    (c.condition === 'Used' || c.condition === 'Recond') &&
-    c.price < price * 0.70 &&
-    c.id !== selectedCar.id
-  );
-  if (candidates.length) {
-    candidates.sort((a,b) => Math.abs(a.price - price*0.65) - Math.abs(b.price - price*0.65));
-    return candidates[0];
-  }
+// 3. Same body type any make, USED only
+candidates = CAR_DATASET.filter(c =>
+  c.bodyType === selectedCar.bodyType &&
+  c.condition === 'Used' &&
+  c.price >= price * 0.40 &&
+  c.price < price * 0.80 &&
+  c.id !== selectedCar.id
+);
 
-  return null; // use percentage fallback
+// 4. Fallback: any USED cheaper than 70%
+candidates = CAR_DATASET.filter(c =>
+  c.condition === 'Used' &&
+  c.price < price * 0.70 &&
+  c.id !== selectedCar.id
+);
+
 }
 
 // ============================================================
